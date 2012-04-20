@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>beforeRunningCommand</key>
+	<string>saveActiveFile</string>
+	<key>command</key>
+	<string>#!/usr/bin/env node
+
+var util = require("util");
+var exec = require('child_process').exec;
+var fs = require('fs');
+var env = process.env;
+
+var sm = "/Users/maxnikitin/.virtualenvs/zvooq/bin/spritemapper";
+var conf = env.TM_BUNDLE_SUPPORT.replace(' ', '\\ ') + "/dev-config.ini";
+
+var filetext = new String(fs.readFileSync(env.TM_FILEPATH));
+var regex = /spritemapper\.output_image\s+=\s+(.+?{time}.+?)( |\n)/;
+
+var printExec = function (error, stdout, stderr) {
+	if (stdout) {
+		util.puts(stdout);
+	} else if (stderr) {
+		util.puts(stderr);
+	} else if (error !== null) {
+		util.puts(error);
+	}
+};
+
+if (regex.test(filetext)) {
+	var matches = filetext.match(regex);
+	if (matches[1]) {
+		var path = env.TM_DIRECTORY + '/' + matches[1];
+		path = path.split("/");
+		var filename = path[path.length - 1].replace(/ /g, '\\ ').replace(/\./g, '\\.').replace(/{time}/g, '[0-9]+').replace(/\\/g, '\\\\');
+		delete path[path.length - 1];
+		var dir = path.join("/").replace(/\/$/, '');
+		if (filename) {
+		var rmCmd = 'find -E ' + dir + '  -regex .*' + filename + ' -type f ' +
+			'| while read f; do ' +
+				'rm $f; ' +
+			'done;'
+		util.puts(rmCmd);
+		exec(rmCmd, printExec);
+		}
+	}
+}
+
+var cmd = sm  + ' -c ' + conf + ' ' + env.TM_FILEPATH;
+exec(cmd, printExec);
+</string>
+	<key>input</key>
+	<string>none</string>
+	<key>keyEquivalent</key>
+	<string>@C</string>
+	<key>name</key>
+	<string>Compile</string>
+	<key>output</key>
+	<string>afterSelectedText</string>
+	<key>scope</key>
+	<string>source.css</string>
+	<key>uuid</key>
+	<string>969824D1-8D09-494F-A36A-38348E16336F</string>
+</dict>
+</plist>
